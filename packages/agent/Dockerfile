@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 debian:bullseye-slim
+FROM --platform=linux/amd64 debian:12.11-slim
 
 ARG GIT_SHA
 ARG MEDPLUM_VERSION
