@@ -11,6 +11,8 @@ on:
 jobs:
   security-scan:
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write  # <-- REQUIRED to upload SARIF to GitHub dashboard
     steps:
       - uses: actions/checkout@v3
 
@@ -28,40 +30,96 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high
+          args: --severity-threshold=high --json-file-output=snyk-report.json
         continue-on-error: true
+
+      - name: Upload Snyk report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-report
+          path: snyk-report.json
 
       - name: Run Semgrep scan
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
+          output: semgrep.sarif
+          format: sarif
         continue-on-error: true
+
+      - name: Upload Semgrep SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: semgrep.sarif
+
+      - name: Upload Semgrep report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep.sarif
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: 'app:latest'
-          format: 'table'
+          format: 'sarif'
+          output: trivy.sarif
           exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
         continue-on-error: true
 
+      - name: Upload Trivy SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: trivy.sarif
+
+      - name: Upload Trivy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy.sarif
+
       - name: Run tfsec
         uses: aquasecurity/tfsec-action@v1.0.3
         with:
           working-directory: ./terraform
+          format: sarif
+          out: tfsec.sarif
         continue-on-error: true
+
+      - name: Upload tfsec SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: tfsec.sarif
+
+      - name: Upload tfsec artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfsec-report
+          path: tfsec.sarif
 
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12.2555.0
         with:
           directory: ./terraform
           framework: terraform
-          output_format: cli
+          output_format: sarif
+          output_file_path: checkov.sarif
           quiet: true
         continue-on-error: true
+
+      - name: Upload Checkov SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: checkov.sarif
+
+      - name: Upload Checkov artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkov-report
+          path: checkov.sarif
 
   dependency-scan:
     runs-on: ubuntu-latest
@@ -78,5 +136,11 @@ jobs:
         run: npm ci
 
       - name: Run npm audit
-        run: npm audit --omit=dev --audit-level=moderate
+        run: npm audit --omit=dev --audit-level=moderate --json > npm-audit-report.json
         continue-on-error: true
+
+      - name: Upload npm audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-report
+          path: npm-audit-report.json
