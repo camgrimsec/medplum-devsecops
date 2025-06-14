@@ -76,19 +76,20 @@ jobs:
 
       - name: Run tfsec with SARIF output
         run: |
-          docker run --rm -v $(pwd):/src aquasec/tfsec /src/terraform --format sarif --out tfsec.sarif
+          mkdir -p tfsec-output
+          docker run --rm -v $(pwd):/src aquasec/tfsec /src/terraform --format sarif --out /src/tfsec-output/tfsec.sarif
         continue-on-error: true
 
       - name: Upload tfsec SARIF to GitHub
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: tfsec.sarif
+          sarif_file: tfsec-output/tfsec.sarif
 
       - name: Upload tfsec artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfsec-report
-          path: tfsec.sarif
+          path: tfsec-output/tfsec.sarif
 
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12.2555.0
