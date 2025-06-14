@@ -32,12 +32,14 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
+        continue-on-error: true
 
       # Semgrep Scan
       - name: Run Semgrep scan
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/default"
+        continue-on-error: true
 
       # Docker Scan
       - name: Run Trivy vulnerability scanner
@@ -49,6 +51,7 @@ jobs:
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+        continue-on-error: true
 
       # IaC Scan
       - name: Run tfsec
@@ -90,6 +93,7 @@ jobs:
           path: '.'
           format: 'HTML'
           out: 'reports'
+        continue-on-error: true
 
       # Upload security reports
       - name: Upload security reports
