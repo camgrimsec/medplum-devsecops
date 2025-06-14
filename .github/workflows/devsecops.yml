@@ -74,12 +74,9 @@ jobs:
           name: trivy-report
           path: trivy-report.json
 
-      - name: Run tfsec
-        uses: aquasecurity/tfsec-action@v1.0.3
-        with:
-          working-directory: ./terraform
-          format: sarif
-          out: tfsec.sarif
+      - name: Run tfsec with SARIF output
+        run: |
+          docker run --rm -v $(pwd):/src aquasec/tfsec /src/terraform --format sarif --out tfsec.sarif
         continue-on-error: true
 
       - name: Upload tfsec SARIF to GitHub
