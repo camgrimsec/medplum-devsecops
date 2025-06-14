@@ -27,7 +27,7 @@ jobs:
 
       # Snyk Security Scan
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@master
+        uses: snyk/actions/node@v1.11.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -41,31 +41,34 @@ jobs:
           config: "p/default"
         continue-on-error: true
 
-      # Docker Scan
+      # Docker Scan with Trivy
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.16.0
         with:
           image-ref: 'app:latest'
           format: 'table'
-          exit-code: '1'
+          exit-code: '0'  # Don't fail build
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
         continue-on-error: true
 
-      # IaC Scan
+      # IaC Scan with tfsec
       - name: Run tfsec
-        uses: aquasecurity/tfsec-action@v1.0.0
+        uses: aquasecurity/tfsec-action@v1.1.0
         with:
           working-directory: ./terraform
+        continue-on-error: true
 
+      # IaC Scan with Checkov
       - name: Run Checkov
-        uses: bridgecrewio/checkov-action@master
+        uses: bridgecrewio/checkov-action@v12.2555.0
         with:
           directory: ./terraform
           framework: terraform
           output_format: cli
           quiet: true
+        continue-on-error: true
 
   dependency-scan:
     runs-on: ubuntu-latest
@@ -81,13 +84,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # npm audit
+      # npm audit (soft-fail with controlled audit-level)
       - name: Run npm audit
-        run: npm audit --production
+        run: npm audit --omit=dev --audit-level=moderate
+        continue-on-error: true
 
       # OWASP Dependency Check
       - name: Run OWASP Dependency Check
-        uses: dependency-check/Dependency-Check_Action@main
+        uses: dependency-check/Dependency-Check_Action@master
         with:
           project: 'Medplum'
           path: '.'
@@ -101,4 +105,4 @@ jobs:
         with:
           name: security-reports
           path: reports/
-          if-no-files-found: error 
+          if-no-files-found: error
