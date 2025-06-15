@@ -74,22 +74,17 @@ jobs:
           name: trivy-report
           path: trivy-report.json
 
-      - name: Run tfsec with SARIF output
+      - name: Run tfsec with JSON output
         run: |
           mkdir -p tfsec-output
-          docker run --rm -v $(pwd):/src aquasec/tfsec /src/terraform --format sarif --out /src/tfsec-output/tfsec.sarif
+          docker run --rm -v $(pwd):/src aquasec/tfsec /src/terraform --format json --out /src/tfsec-output/tfsec.json
         continue-on-error: true
-
-      - name: Upload tfsec SARIF to GitHub
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: tfsec-output/tfsec.sarif
 
       - name: Upload tfsec artifact
         uses: actions/upload-artifact@v4
         with:
           name: tfsec-report
-          path: tfsec-output/tfsec.sarif
+          path: tfsec-output/tfsec.json
 
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12.2555.0
