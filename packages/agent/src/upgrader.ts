@@ -62,6 +62,9 @@ export async function upgraderMain(argv: string[]): Promise<void> {
   try {
     // Run installer
     globalLogger.info('Running installer silently', { binPath });
+    if (!binPath.match(/^[\w\.\-\/]+$/)) {
+      throw new Error(`Invalid binary path: ${binPath}`);
+    }
     spawnSync(binPath, ['/S']);
     globalLogger.info(`Agent version ${version} successfully installed`);
   } catch (err: unknown) {
